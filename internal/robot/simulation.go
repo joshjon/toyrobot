@@ -1,35 +1,68 @@
 package robot
 
 import (
-	"github.com/joshjon/toyrobot/internal/direction"
+	"bufio"
+	"fmt"
+	"io"
 )
 
 const maxX, maxY = 5, 5
 
-type Command interface {
-	Execute(state *State)
+func RunSimulation(in io.Reader, out io.Writer) <-chan error {
+	commands, readErrs := readCommands(in)
+	errs := make(chan error, 1)
+
+	go func() {
+		defer close(errs)
+		state := State{
+			maxX: maxX,
+			maxY: maxY,
+			out:  out,
+		}
+		for {
+			select {
+			case command, ok := <-commands:
+				if !ok {
+					return
+				}
+				if err := command.Execute(&state); err != nil {
+					errs <- fmt.Errorf("unexpected error: %w", err)
+				}
+			case err := <-readErrs:
+				if err != nil {
+					errs <- err
+				}
+			}
+		}
+	}()
+
+	return errs
 }
 
-type State struct {
-	maxX      int
-	maxY      int
-	posX      int
-	posY      int
-	direction direction.Direction
-	placed    bool
-}
+func readCommands(reader io.Reader) (<-chan Command, <-chan error) {
+	commands := make(chan Command, 50)
+	errs := make(chan error, 1)
 
-func (s *State) withinBounds(x int, y int) bool {
-	return x >= 0 && x <= s.maxX && y >= 0 && y <= s.maxY
-}
+	go func() {
+		defer close(commands)
+		defer close(errs)
+		scanner := bufio.NewScanner(reader)
 
-func RunSimulation(commands <-chan Command) {
-	state := State{
-		maxX: maxX,
-		maxY: maxY,
-	}
+		for scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				errs <- fmt.Errorf("unexpected error: %w", err)
+				continue
+			}
 
-	for command := range commands {
-		command.Execute(&state)
-	}
+			line := scanner.Text()
+			command, err := CommandFromString(line)
+			if err != nil {
+				errs <- fmt.Errorf("bad input: %w", err)
+				continue
+			}
+			commands <- command
+		}
+	}()
+
+	return commands, errs
 }

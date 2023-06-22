@@ -32,7 +32,7 @@ func CommandFromString(command string) (Command, error) {
 
 	parts := strings.Split(command, " ")
 
-	switch parts[0] {
+	switch strings.ToUpper(parts[0]) {
 	case CommandPlaceStr:
 		return parseMoveCommand(parts)
 	case CommandMoveStr:

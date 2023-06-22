@@ -1,6 +1,9 @@
 package direction
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 var InvalidDirectionErr = errors.New("invalid direction")
 
@@ -16,7 +19,7 @@ const (
 )
 
 func FromString(direction string) (Direction, error) {
-	switch direction {
+	switch strings.ToUpper(direction) {
 	case "NORTH":
 		return North, nil
 	case "EAST":

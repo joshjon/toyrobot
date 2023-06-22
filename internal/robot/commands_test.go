@@ -1,11 +1,11 @@
 package robot
 
 import (
-	"fmt"
-	"io"
-	"os"
+	"bytes"
+	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshjon/toyrobot/internal/direction"
@@ -73,7 +73,8 @@ func TestCommandPlace_Execute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.initial
-			tt.command.Execute(&got)
+			err := tt.command.Execute(&got)
+			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -127,7 +128,8 @@ func TestCommandMove_Execute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.initial
-			tt.command.Execute(&got)
+			err := tt.command.Execute(&got)
+			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -139,7 +141,8 @@ func TestCommandRotateLeft_Execute(t *testing.T) {
 	got := initial
 
 	command := &CommandRotateLeft{}
-	command.Execute(&got)
+	err := command.Execute(&got)
+	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
 
@@ -149,28 +152,62 @@ func TestCommandRotateRight_Execute(t *testing.T) {
 	got := initial
 
 	command := &CommandRotateRight{}
-	command.Execute(&got)
+	err := command.Execute(&got)
+	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
 
 func TestCommandReport_Execute(t *testing.T) {
-	orig := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-	defer func() { os.Stdout = orig }()
+	tests := []struct {
+		name              string
+		writerConstructor func() *mockWriter
+		wantErr           bool
+	}{
+		{
+			name: "report success",
+			writerConstructor: func() *mockWriter {
+				writer := &mockWriter{}
+				writer.On("Write", mock.Anything).
+					Return(0, nil).
+					Once()
+				return writer
+			},
+			wantErr: false,
+		},
+		{
+			name: "report writer error",
+			writerConstructor: func() *mockWriter {
+				writer := &mockWriter{}
+				writer.On("Write", mock.Anything).
+					Return(0, errors.New("some error")).
+					Once()
+				return writer
+			},
+			wantErr: true,
+		},
+	}
 
-	state := placedState(3, 3, direction.East)
-	command := CommandReport{}
-	command.Execute(&state)
-	w.Close()
-	out, _ := io.ReadAll(r)
-	require.Equal(t, fmt.Sprintf("%d,%d,%s\n", state.posX, state.posY, state.direction.String()), string(out))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			writer := tt.writerConstructor()
+			state := State{out: writer}
+			command := CommandReport{}
+			err := command.Execute(&state)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			writer.AssertExpectations(t)
+		})
+	}
 }
 
 func defaultState() State {
 	return State{
 		maxX: maxX,
 		maxY: maxY,
+		out:  &bytes.Buffer{},
 	}
 }
 
@@ -182,5 +219,15 @@ func placedState(posX int, posY int, direction direction.Direction) State {
 		posY:      posY,
 		direction: direction,
 		placed:    true,
+		out:       &bytes.Buffer{},
 	}
+}
+
+type mockWriter struct {
+	mock.Mock
+}
+
+func (w *mockWriter) Write(p []byte) (n int, err error) {
+	called := w.Called(p)
+	return called.Int(0), called.Error(1)
 }
