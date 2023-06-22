@@ -19,6 +19,10 @@ type State struct {
 	placed    bool
 }
 
+func (s *State) withinBounds(x int, y int) bool {
+	return x >= 0 && x <= s.maxX && y >= 0 && y <= s.maxY
+}
+
 func RunSimulation(commands <-chan Command) {
 	state := State{
 		maxX: maxX,
