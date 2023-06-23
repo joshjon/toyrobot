@@ -13,9 +13,9 @@ Toy robot [coding challenge](CHALLENGE.md) solution written in Go.
   
    Go:
 
-       ```shell
-       go run cmd/main/main.go
-       ```
+    ```shell
+    go run cmd/main/main.go
+    ```
    Docker:
 
      ```shell
