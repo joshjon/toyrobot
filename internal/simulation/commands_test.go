@@ -1,4 +1,4 @@
-package robot
+package simulation
 
 import (
 	"bytes"
@@ -190,7 +190,7 @@ func TestCommandReport_Execute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := tt.writerConstructor()
-			state := State{out: writer}
+			state := State{writer: writer}
 			command := CommandReport{}
 			err := command.Execute(&state)
 			if tt.wantErr {
@@ -205,9 +205,9 @@ func TestCommandReport_Execute(t *testing.T) {
 
 func defaultState() State {
 	return State{
-		maxX: maxX,
-		maxY: maxY,
-		out:  &bytes.Buffer{},
+		maxX:   maxX,
+		maxY:   maxY,
+		writer: &bytes.Buffer{},
 	}
 }
 
@@ -219,7 +219,7 @@ func placedState(posX int, posY int, direction direction.Direction) State {
 		posY:      posY,
 		direction: direction,
 		placed:    true,
-		out:       &bytes.Buffer{},
+		writer:    &bytes.Buffer{},
 	}
 }
 

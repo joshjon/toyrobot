@@ -7,6 +7,7 @@ import (
 
 var InvalidDirectionErr = errors.New("invalid direction")
 
+// Direction is an enum representation of the four cardinal directions.
 type Direction int
 
 const (
@@ -18,6 +19,7 @@ const (
 	end
 )
 
+// FromString parses a Direction from a string.
 func FromString(direction string) (Direction, error) {
 	switch strings.ToUpper(direction) {
 	case "NORTH":
@@ -32,6 +34,7 @@ func FromString(direction string) (Direction, error) {
 	return 0, InvalidDirectionErr
 }
 
+// Left applies an anti-clockwise right angle rotation to a Direction.
 func (d Direction) Left() Direction {
 	dir := d - 1
 	if dir == beg {
@@ -40,6 +43,7 @@ func (d Direction) Left() Direction {
 	return dir
 }
 
+// Right applies a clockwise right angle rotation to a Direction.
 func (d Direction) Right() Direction {
 	dir := d + 1
 	if dir == end {
@@ -63,6 +67,7 @@ func (d Direction) Axes() (x int, y int) {
 	return 0, 0
 }
 
+// String returns the string representation of a Direction.
 func (d Direction) String() string {
 	if d < beg || d > end {
 		return "UNKNOWN"

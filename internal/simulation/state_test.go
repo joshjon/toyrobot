@@ -1,4 +1,4 @@
-package robot
+package simulation
 
 import (
 	"bytes"
@@ -13,8 +13,8 @@ import (
 func TestState_Report(t *testing.T) {
 	var buf bytes.Buffer
 	state := placedState(3, 3, direction.East)
-	state.out = &buf
-	err := state.Report()
+	state.writer = &buf
+	err := state.report()
 	require.NoError(t, err)
 	got := buf.String()
 	require.Equal(t, fmt.Sprintf("%d,%d,%s\n", state.posX, state.posY, state.direction.String()), got)

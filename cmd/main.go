@@ -4,13 +4,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joshjon/toyrobot/internal/robot"
+	"github.com/joshjon/toyrobot/internal/simulation"
 )
 
 func main() {
 	fmt.Println("Enter commands:")
-	errs := robot.RunSimulation(os.Stdin, os.Stdout)
+	reader := simulation.NewReader(os.Stdin)
+	executor := simulation.NewExecutor()
+	simulator := simulation.NewSimulator(reader, executor, os.Stdout)
+	errs := simulator.Run()
 	for err := range errs {
-		fmt.Println(err)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
