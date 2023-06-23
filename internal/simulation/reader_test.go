@@ -1,12 +1,45 @@
-package robot
+package simulation
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshjon/toyrobot/internal/direction"
 )
+
+func TestNewReader(t *testing.T) {
+	var buf bytes.Buffer
+	reader := NewReader(&buf)
+	require.Equal(t, &buf, reader.reader)
+}
+
+func TestReader_Run(t *testing.T) {
+	want := []Command{
+		&CommandPlace{
+			X:         0,
+			Y:         0,
+			Direction: direction.North,
+		},
+		&CommandMove{},
+		&CommandReport{},
+	}
+	var commands = make(chan Command)
+	var bufReader bytes.Buffer
+
+	bufReader.Write([]byte("PLACE 0,0,NORTH\n"))
+	bufReader.Write([]byte("MOVE\n"))
+	bufReader.Write([]byte("REPORT\n"))
+	reader := &Reader{reader: &bufReader}
+	reader.Run(commands)
+
+	var got []Command
+	for command := range commands {
+		got = append(got, command)
+	}
+	require.EqualValues(t, want, got)
+}
 
 func TestCommandFromString(t *testing.T) {
 	tests := []struct {

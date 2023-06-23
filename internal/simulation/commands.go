@@ -1,9 +1,11 @@
-package robot
+package simulation
 
 import (
 	"github.com/joshjon/toyrobot/internal/direction"
 )
 
+// Command is a command that can be executed on a State in order to apply a
+// mutation or retrieve data.
 type Command interface {
 	Execute(state *State) error
 }
@@ -56,5 +58,5 @@ func (c *CommandRotateRight) Execute(state *State) error {
 type CommandReport struct{}
 
 func (c *CommandReport) Execute(state *State) error {
-	return state.Report()
+	return state.report()
 }
